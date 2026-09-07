@@ -16,9 +16,7 @@ pip install -r requirements.txt
 cp .env.example .env
 
 # Load reproducible sample announcements and score them without an API key
-python -m idx_news.cli seed-demo
-python -m idx_news.cli score --provider rules
-python -m idx_news.cli collect --keyword bumi --page-size 100
+python -m idx_news.cli
 python -m idx_news.cli score --provider rules
 streamlit run app.py
 ```
@@ -37,6 +35,10 @@ python -m idx_news.cli score --provider rules
 python -m idx_news.cli report --limit 20
 ```
 
+Collection defaults to the last 30 days (`NEWS_LOOKBACK_DAYS=30`) and the
+dashboard displays the same rolling window. Override the collector window when
+needed, for example: `--date-from 20260101`.
+
 Only collect content you are permitted to access and respect IDX terms, robots
 rules, rate limits, and copyright. The collector does not bypass controls.
 If IDX returns HTTP 403, use an authorised IDX export/feed or an approved
@@ -52,7 +54,28 @@ python -m idx_news.cli score --provider deepseek
 
 The DeepSeek scorer uses JSON Output mode and validates its response against the
 local rubric before it is stored. Treat it as an analyst-assist signal: review
-the source document and rationale before acting.
+the source document and rationale before acting. `DEEPSEEK_MAX_INPUT_CHARS`
+defaults to 30,000 so an official IDX attachment can be included in the review.
+
+## PDF enrichment for material disclosures
+
+IDX listings often provide only a short subject while the material facts are in
+the primary PDF or its official IDX attachments. The enrichment command
+downloads qualifying IDX PDFs (the primary document and up to
+`PDF_MAX_DOCUMENTS - 1` attachments), extracts bounded text locally, and does
+not retain the PDF file. Then it can rerun DeepSeek if the text is newer than
+its prior AI score:
+
+```bash
+python -m idx_news.cli extract-pdfs --min-materiality 60 --with-deepseek
+# Target one issuer and immediately rescore any enriched disclosure
+python -m idx_news.cli extract-pdfs --ticker BUMI --with-deepseek
+```
+
+`monitor --with-deepseek` performs the same PDF enrichment automatically before
+DeepSeek scoring. PDFs without a text layer are recorded as failed rather than
+repeatedly downloaded; use `extract-pdfs --retry-failed` after resolving the
+cause or adding an OCR workflow.
 
 ## Near-real-time monitoring and cost controls
 

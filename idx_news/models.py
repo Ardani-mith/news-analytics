@@ -12,6 +12,7 @@ class Article:
     body: str = ""
     published_at: str | None = None
     tickers: tuple[str, ...] = ()
+    attachment_urls: tuple[str, ...] = ()
     source: str = "IDX"
 
     def key(self) -> str:

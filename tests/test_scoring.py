@@ -29,3 +29,10 @@ def test_deepseek_payload_is_validated_before_storage():
     })
     assert score.provider == "deepseek"
     assert score.model == "deepseek-v4-flash"
+
+
+def test_deepseek_prompt_keeps_attachment_text_by_default(monkeypatch):
+    monkeypatch.delenv("DEEPSEEK_MAX_INPUT_CHARS", raising=False)
+    text = "x" * 8_000
+    prompt = DeepSeekScorer._article_prompt(Article("https://example.test/1", "Disclosure", text))
+    assert text in prompt

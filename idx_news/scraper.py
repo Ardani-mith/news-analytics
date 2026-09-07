@@ -150,7 +150,7 @@ class IDXAnnouncementScraper:
             if not title or not announcement_id:
                 continue
             attachments = reply.get("attachments") or []
-            primary_url, attachment_names = self._attachment_details(attachments)
+            primary_url, attachment_names, attachment_urls = self._attachment_details(attachments)
             source_url = primary_url or f"{self.url}#announcement={announcement_id}"
             ticker = str(announcement.get("Kode_Emiten") or "").strip().upper()
             subject = str(announcement.get("PerihalPengumuman") or "").strip()
@@ -167,15 +167,17 @@ class IDXAnnouncementScraper:
                 body="\n".join(body_parts),
                 published_at=str(announcement.get("TglPengumuman") or "").strip() or None,
                 tickers=(ticker,) if ticker else (),
+                attachment_urls=tuple(url for url in attachment_urls if url != primary_url),
             ))
         return articles
 
     @staticmethod
-    def _attachment_details(attachments: Any) -> tuple[str | None, list[str]]:
+    def _attachment_details(attachments: Any) -> tuple[str | None, list[str], list[str]]:
         if not isinstance(attachments, list):
-            return None, []
+            return None, [], []
         valid = [attachment for attachment in attachments if isinstance(attachment, dict)]
         primary = next((item for item in valid if not item.get("IsAttachment")), valid[0] if valid else None)
         primary_url = str(primary.get("FullSavePath") or "").strip() if primary else None
         names = [str(item.get("OriginalFilename") or item.get("PDFFilename") or "").strip() for item in valid]
-        return primary_url or None, [name for name in names if name]
+        urls = [str(item.get("FullSavePath") or "").strip() for item in valid]
+        return primary_url or None, [name for name in names if name], list(dict.fromkeys(url for url in urls if url))

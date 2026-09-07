@@ -119,11 +119,17 @@ horizon must be one of immediate, short_term, long_term. Evidence must contain a
 
     @staticmethod
     def _article_prompt(article: Article) -> str:
-        return f"TITLE: {article.title}\nTICKERS: {', '.join(article.tickers) or 'unknown'}\nTEXT: {article.body[:7000]}"
+        max_input_chars = int(os.getenv("DEEPSEEK_MAX_INPUT_CHARS", "30000"))
+        if max_input_chars < 1:
+            raise ValueError("DEEPSEEK_MAX_INPUT_CHARS must be at least 1")
+        return f"TITLE: {article.title}\nTICKERS: {', '.join(article.tickers) or 'unknown'}\nTEXT: {article.body[:max_input_chars]}"
 
 
 def article_from_row(row: dict) -> Article:
+    text_parts = [row["body"]]
+    if row.get("pdf_text"):
+        text_parts.append("PDF CONTENT:\n" + row["pdf_text"])
     return Article(
-        source_url=row["source_url"], title=row["title"], body=row["body"],
+        source_url=row["source_url"], title=row["title"], body="\n\n".join(text_parts),
         published_at=row["published_at"], tickers=tuple(filter(None, row["tickers"].split(","))), source=row["source"],
     )

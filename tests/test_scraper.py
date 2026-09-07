@@ -24,6 +24,7 @@ def test_maps_idx_json_to_an_article_with_the_primary_pdf():
     assert article.title == "Pengambilalihan Loyal Metals Ltd"
     assert article.tickers == ("BUMI",)
     assert article.source_url == "https://www.idx.co.id/main.pdf"
+    assert article.attachment_urls == ("https://www.idx.co.id/appendix.pdf",)
     assert article.published_at == "2026-09-07T07:07:04"
     assert "Pengambilalihan Loyal Metals L" in article.body
     assert "appendix.pdf" in article.body
