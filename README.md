@@ -122,3 +122,13 @@ app.py            Streamlit review dashboard
 data/             local SQLite database (created at runtime)
 tests/            deterministic scorer and storage tests
 ```
+
+## Data Cleaning
+cd /Users/ardanicz/Development/my-quant/news-analytics && \
+set -euo pipefail && \
+.venv/bin/python -m idx_news.cli collect --date-from "$(date -v-30d +%Y%m%d)" --max-pages 20 --page-size 100 && \
+.venv/bin/python -m idx_news.cli score --provider rules && \
+backup_file="data/idx_news.db.backup-$(date +%Y%m%d-%H%M%S)" && \
+cp data/idx_news.db "$backup_file" && \
+sqlite3 data/idx_news.db "PRAGMA foreign_keys=ON; BEGIN IMMEDIATE; DELETE FROM scores WHERE article_id IN (SELECT id FROM articles WHERE published_at IS NULL OR datetime(published_at) < datetime('now','-30 days')); DELETE FROM articles WHERE published_at IS NULL OR datetime(published_at) < datetime('now','-30 days'); COMMIT; VACUUM;" && \
+echo "Selesai. Backup: $backup_file"
